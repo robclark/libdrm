@@ -71,7 +71,7 @@ struct type_name {
 
 #define type_name_fn(res) \
 char * res##_str(int type) {			\
-	int i;						\
+	unsigned int i;					\
 	for (i = 0; i < ARRAY_SIZE(res##_names); i++) { \
 		if (res##_names[i].type == type)	\
 			return res##_names[i].name;	\
@@ -995,7 +995,7 @@ void usage(char *name)
 
 #define dump_resource(res) if (res) dump_##res()
 
-static int page_flipping_supported(int fd)
+static int page_flipping_supported(void)
 {
 	/*FIXME: generic ioctl needed? */
 	return 1;
@@ -1022,8 +1022,8 @@ int main(int argc, char **argv)
 	int encoders = 0, connectors = 0, crtcs = 0, planes = 0, framebuffers = 0;
 	int test_vsync = 0;
 	char *modules[] = { "i915", "radeon", "nouveau", "vmwgfx", "omapdrm" };
-	char *modeset = NULL;
-	int i, count = 0, plane_count = 0;
+	unsigned int i;
+	int count = 0, plane_count = 0;
 	struct connector con_args[2];
 	struct plane plane_args[2] = {0};
 	
@@ -1050,7 +1050,6 @@ int main(int argc, char **argv)
 			test_vsync = 1;
 			break;
 		case 's':
-			modeset = strdup(optarg);
 			con_args[count].crtc = -1;
 			if (sscanf(optarg, "%d:%64s",
 				   &con_args[count].id,
@@ -1096,7 +1095,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (test_vsync && !page_flipping_supported(fd)) {
+	if (test_vsync && !page_flipping_supported()) {
 		fprintf(stderr, "page flipping not supported by drm.\n");
 		return -1;
 	}
