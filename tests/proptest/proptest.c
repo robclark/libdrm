@@ -39,6 +39,7 @@
 
 int fd;
 drmModeResPtr res = NULL;
+drmModePlaneResPtr plane_res = NULL;
 
 const char *connector_type_str(uint32_t type)
 {
@@ -239,10 +240,33 @@ static void listCrtcProperties(void)
 	}
 }
 
+static void listPlaneProperties(void)
+{
+	int i;
+	drmModePlanePtr p;
+
+	for (i = 0; i < plane_res->count_planes; i++) {
+		p = drmModeGetPlane(fd, plane_res->planes[i]);
+
+		if (!p) {
+			fprintf(stderr, "Could not get plane %u: %s\n",
+				plane_res->planes[i], strerror(errno));
+			continue;
+		}
+
+		printf("Plane %u\n", p->plane_id);
+
+		listObjectProperties(p->plane_id, DRM_MODE_OBJECT_PLANE);
+
+		drmModeFreePlane(p);
+	}
+}
+
 static void listAllProperties(void)
 {
 	listConnectorProperties();
 	listCrtcProperties();
+	listPlaneProperties();
 }
 
 static int setProperty(char *argv[])
@@ -304,6 +328,14 @@ int main(int argc, char *argv[])
 	res = drmModeGetResources(fd);
 	if (!res) {
 		fprintf(stderr, "Failed to get resources: %s\n",
+			strerror(errno));
+		ret = 1;
+		goto done;
+	}
+
+	plane_res = drmModeGetPlaneResources(fd);
+	if (!plane_res) {
+		fprintf(stderr, "Failed to get plane resources: %s\n",
 			strerror(errno));
 		ret = 1;
 		goto done;
